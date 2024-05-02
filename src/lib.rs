@@ -1,7 +1,9 @@
 mod blockchain;
+mod cli;
 mod error;
 
-use blockchain::{Blockchain};
+use crate::blockchain::Blockchain;
+use crate::cli::Cli;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use error::Result;
@@ -84,27 +86,11 @@ impl Block {
     }
 }
 
-fn main() {
-    let mut blockchain = Blockchain::new().expect("REASON");
+fn main() -> Result<()> {
+    let mut cli = Cli::new()?;
+    cli.run()?;
 
-    // Add some blocks to the chain
-    blockchain
-        
-        .add_block("Block 1".to_string())
-        .unwrap();
-    blockchain
-        
-        .add_block("Block 2".to_string())
-        .unwrap();
-    blockchain
-        
-        .add_block("Block  3".to_string())
-        .unwrap();
-
-    // Print the blockchain
-    //println!("Blockchain: {:#?}", blockchain);
-
-    
+    Ok(())
 }
 
 #[cfg(test)]
@@ -119,7 +105,6 @@ mod tests {
         let _ = b.add_block("data2".to_string());
         let _ = b.add_block("data23".to_string());
         dbg!(b);
-        
     }
     #[test]
     fn test_add_block() {
@@ -133,5 +118,3 @@ mod tests {
         }
     }
 }
-
-

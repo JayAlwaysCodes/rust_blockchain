@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::Block;
-use sled;
 use bincode;
+use sled;
 const TARGET_HEXT: usize = 4;
 
 #[derive(Debug, Clone)]
@@ -79,5 +79,3 @@ impl<'a> Iterator for BlockchainIter<'a> {
         None
     }
 }
-
-
