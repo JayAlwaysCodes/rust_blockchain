@@ -1,4 +1,4 @@
-use crate::blockchain::Blockchain;
+use crate::{blockchain::Blockchain, transaction::Transaction};
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use crate::error::Result;
@@ -11,7 +11,7 @@ const TARGET_HEXT: usize = 4;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     timestamp: u128,
-    transactions: String,
+    transactions: Vec<Transaction>,
     prev_block_hash: String,
     hash: String,
     height: usize,
@@ -19,6 +19,10 @@ pub struct Block {
 }
 
 impl Block {
+    pub fn  get_transaction(&self) -> &Vec<Transaction> {
+        &self.transactions
+    }
+
     pub(crate) fn get_prev_hash(&self) -> String {
         self.prev_block_hash.clone()
     }
@@ -28,10 +32,10 @@ impl Block {
     }
 
     ///new genesis block
-    pub fn new_genesis_block() -> Block {
-        Block::new_block(String::from("Genesis Block"), String::new(), 0).unwrap()
+    pub fn new_genesis_block(coinbase: Transaction) -> Block {
+        Block::new_block(vec![coinbase], String::new(), 0).unwrap()
     }
-    pub fn new_block(data: String, prev_block_hash: String, height: usize) -> Result<Block> {
+    pub fn new_block(data: Vec<Transaction>, prev_block_hash: String, height: usize) -> Result<Block> {
         let timestamp: u128 = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
@@ -91,17 +95,17 @@ mod tests {
     fn test_blockchain() {
         let mut b = Blockchain::new().unwrap();
 
-        let _ = b.add_block("data".to_string());
-        let _ = b.add_block("data2".to_string());
-        let _ = b.add_block("data23".to_string());
+        // let _ = b.add_block("data".to_string());
+        // let _ = b.add_block("data2".to_string());
+        // let _ = b.add_block("data23".to_string());
         dbg!(b);
     }
     #[test]
     fn test_add_block() {
         let mut b = Blockchain::new().unwrap();
-        let _ = b.add_block("block 1".to_string());
-        let _ = b.add_block("block 2".to_string());
-        let _ = b.add_block("block 3".to_string());
+        // let _ = b.add_block("block 1".to_string());
+        // let _ = b.add_block("block 2".to_string());
+        // let _ = b.add_block("block 3".to_string());
 
         for item in b.iter() {
             println!("item: {:#?}", item)
