@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::Block;
+use crate::block::Block;
 use bincode;
 use sled;
 const TARGET_HEXT: usize = 4;

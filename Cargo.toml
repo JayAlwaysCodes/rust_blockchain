@@ -6,7 +6,7 @@ edition = "2021"
 
 [[bin]]
 name = "rust-blockchain"
-path = "src/lib.rs"
+path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -24,3 +24,5 @@ rand = "0.8.5"
 merkle-cbt = "0.3.2"
 serde ={ version = "1.0", features = ["derive"]}
 serde_json = "1.0"
+blockchain ="0.1.0"
+error = "0.1.0"

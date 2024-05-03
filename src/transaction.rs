@@ -1,4 +1,6 @@
 use crate::error::Result;
+use serde::{Deserialize, Serialize};
+use crypto::{digest::Digest, sha2::Sha256};
 
 
 ///Transaction represents a Bitcoin transaction

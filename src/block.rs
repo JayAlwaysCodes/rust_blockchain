@@ -1,12 +1,7 @@
-mod blockchain;
-mod cli;
-mod error;
-
 use crate::blockchain::Blockchain;
-use crate::cli::Cli;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
-use error::Result;
+use crate::error::Result;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
@@ -86,12 +81,7 @@ impl Block {
     }
 }
 
-fn main() -> Result<()> {
-    let mut cli = Cli::new()?;
-    cli.run()?;
 
-    Ok(())
-}
 
 #[cfg(test)]
 mod tests {
