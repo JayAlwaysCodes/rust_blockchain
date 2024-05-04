@@ -4,7 +4,8 @@ use std::process::exit;
 use crate::error::Result;
 use clap::arg;
 use clap::Command;
-use crate::block::Block;
+use crate::wallet::Wallets;
+
 
 
 
@@ -23,11 +24,27 @@ impl Cli {
             .author("johnsonjardocs@gmail.com")
             .about("blockchain in rust: a simple blockchain for learning")
             .subcommand(Command::new("printchain").about("print all the chain blocks"))
+            .subcommand(Command::new("createwallet").about("create a wallet"))
+            .subcommand(Command::new("listaddresses").about("list all addresses"))
             .subcommand(Command::new("getbalance").about("get balance in the blockchain").arg(arg!(<ADDRESS>" 'The Address it get balance for' "))).subcommand(Command::new("create").about("Create a new blockchain").arg(arg!(<ADDRESS>" 'The address to send genesis block reward to' ")))
             .subcommand(Command::new("send").about("send in the blockchain").arg(arg!(<FROM>" 'Source wallet address' ")).arg(arg!(<TO>" 'Destination wallet address' ")).arg(arg!(<AMOUNT>" 'Destination wallet address' ")),)
             .get_matches();
 
-       
+        if let Some(_) = matches.subcommand_matches("createwallet"){
+            let mut ws = Wallets::new()?;
+            let address = ws.create_wallet();
+            ws.save_all()?;
+            println!("success: address {}", address);
+        }
+
+        if let Some(_) = matches.subcommand_matches("listaddresses"){
+            let ws = Wallets::new()?;
+            let addresses = ws.get_all_address();
+            println!("addresses: ");
+            for ad in addresses{
+                println!("{}", ad);
+            }
+        }
 
               
         if let Some(ref matches) = matches.subcommand_matches("create"){
@@ -41,12 +58,9 @@ impl Cli {
             }
         }
 
-        if let Some(ref matches) = matches.subcommand_matches("printchain") {
+        if let Some(_) = matches.subcommand_matches("printchain") {
             
             let  b = Blockchain::new().unwrap();
-        // let _ = b.add_block("block 1".to_string());
-        // let _ = b.add_block("block 2".to_string());
-        // let _ = b.add_block("block 3".to_string());
 
         for item in b.iter() {
             println!("item: {:#?}", item)
