@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::block::Block;
-use crate::transaction::{TXOutput, Transaction};
+use crate::transaction:: Transaction;
+use crate::tx::TXOutput;
 use bincode;
 use std::string::String;
 use log::info;
