@@ -3,11 +3,7 @@ use crate::block::Block;
 use crate::transaction::{TXOutput, Transaction};
 use bincode;
 use std::string::String;
-
-use bitcoincash_addr::HashType;
 use log::info;
-
-use sled::{self};
 use std::collections::HashMap;
 const TARGET_HEXT: usize = 4;
 

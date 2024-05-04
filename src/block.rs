@@ -93,16 +93,17 @@ mod tests {
 
     #[test]
     fn test_blockchain() {
-        let mut b = Blockchain::new().unwrap();
+        let  b = Blockchain::new().unwrap();
 
         // let _ = b.add_block("data".to_string());
         // let _ = b.add_block("data2".to_string());
         // let _ = b.add_block("data23".to_string());
+        println!("blockchain: {:#?}", b);
         dbg!(b);
     }
     #[test]
     fn test_add_block() {
-        let mut b = Blockchain::new().unwrap();
+        let  b = Blockchain::new().unwrap();
         // let _ = b.add_block("block 1".to_string());
         // let _ = b.add_block("block 2".to_string());
         // let _ = b.add_block("block 3".to_string());
