@@ -1,5 +1,5 @@
-use crate::{blockchain::Blockchain, error::Result, wallet::{hash_pub_key, Wallets}};
-use bincode::serialize;
+use crate::{blockchain::Blockchain, error::Result, wallet:: Wallets};
+use std::collections::HashMap;
 use failure::format_err;
 use serde::{Deserialize, Serialize};
 use crypto::{digest::Digest, ed25519, ripemd160::Ripemd160, sha2::Sha256};
@@ -36,7 +36,7 @@ impl Transaction{
         let mut pub_key_hash = wallet.public_key.clone();
         hash_pub_key(&mut pub_key_hash);
 
-        let acc_v = bc.find_spendable_outputs(from, amount);
+        let acc_v = bc.find_spendable_outputs(&pub_key_hash, amount);
         if acc_v.0 < amount {
             error!("Not enough balance");
             return Err(format_err!("Not Enough balance: current balance {}", acc_v.0));
@@ -68,7 +68,8 @@ impl Transaction{
             vin,
             vout,
         };
-        tx.set_id()?;
+        tx.id = tx.hash()?;
+        bc.sign_transaction(&mut tx, &wallet.secret_key)?;
 
         Ok(tx)
     }
@@ -82,27 +83,17 @@ impl Transaction{
             vin: vec![TXInput {
                 txid: String::new(),
                 vout: -1,
-                script_sig: data,
+                signature: Vec::new(),
+                pub_key: Vec::from(data.as_bytes()),
             }],
 
-            vout: vec![TXOutput{
-                value: 100,
-                script_pub_key: to,
-            }],
+            vout: vec![TXOutput::new(100, to)?],
         };
-        tx.set_id()?;
+        tx.id = tx.hash()?;
         Ok(tx)
     }
 
-    ///SetID sets ID of a transaction
-    fn set_id(&mut self) -> Result<()>{
-        let mut hasher  = Sha256::new();
-        let data = bincode::serialize(self)?;
-        hasher.input(&data);
-        self.id = hasher.result_str();
-        Ok(())
-    }
-
+   
     ///IsCoinbase checks whether the transaction is coinbase
     pub fn is_coinbase(&self) -> bool {
         self.vin.len() == 1 && self.vin[0].txid.is_empty() && self.vin[0].vout == -1
