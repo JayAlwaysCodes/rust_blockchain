@@ -5,6 +5,7 @@ mod  block;
 mod transaction;
 mod tx;
 mod wallet;
+mod utxoset;
 
 use crate::cli::Cli;
 use error::Result;
