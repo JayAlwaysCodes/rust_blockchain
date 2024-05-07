@@ -6,6 +6,11 @@ use crate::transaction::{hash_pub_key, Transaction};
 use std::string::String;
 
 
+///TXOutputs collects TXOutput
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TXOutputs{
+    pub outputs: Vec<TXOutput>, 
+}
 
 ///TXInput represents transaction input
 
@@ -46,7 +51,7 @@ impl TXOutput {
     }
 
     ///Lock signs the output
-    fn lock(&mut self, address: &str) -> Result<()> {
+    pub fn lock(&mut self, address: &str) -> Result<()> {
         let pub_key_hash = Address::decode(address).unwrap().body;
         debug!("lock: {}", address);
         self.pub_key_hash = pub_key_hash;
