@@ -1,7 +1,7 @@
 use crate::error::Result;
-use crate::block::Block;
+use crate::block::{self, Block};
 use crate::transaction:: Transaction;
-use crate::tx::TXOutput;
+use crate::tx::{self, TXOutput, TXOutputs};
 use bincode;
 use failure::format_err;
 use std::string::String;
@@ -37,6 +37,9 @@ impl Blockchain {
     ///CreateBlockchain creates a new blockchain DB
     pub fn create_blockchain(address: String) -> Result<Blockchain>{
         info!("Creating new blockchain...");
+        if let Err(e) = std::fs::remove_dir_all("data/blocks"){
+            info!("blocks not exist to delete")
+        }
 
         let db = sled::open("data/blocks")?;
         info!("Creating new block database...");
@@ -51,14 +54,14 @@ impl Blockchain {
         bc.db.flush()?;
         Ok(bc)
     }
-    pub fn add_block(&mut self, transaction: Vec<Transaction>) -> Result<()> {
+    pub fn add_block(&mut self, transaction: Vec<Transaction>) -> Result<Block> {
         let lasthash = self.db.get("LAST")?.unwrap();
         let new_block = Block::new_block(transaction, String::from_utf8(lasthash.to_vec())?, TARGET_HEXT)?;
         self.db
             .insert(new_block.get_hash(), bincode::serialize(&new_block)?)?;
         self.db.insert("LAST", new_block.get_hash().as_bytes())?;
         self.current_hash = new_block.get_hash();
-        Ok(())
+        Ok(new_block)
     }
 
     ///FindUnspentTransactions returns a list of transactions containing unspent outputs
@@ -101,45 +104,50 @@ impl Blockchain {
     }
 
     /// FindUTXO finds and returns all unspent transaction outputs
-    pub fn find_UTXO(&self, address: &[u8]) -> Vec<TXOutput> {
-        let mut utxos = Vec::<TXOutput>::new();
-        let unspend_Txs = self.find_unspent_transactions(address);
-        for tx in unspend_Txs{
-            for out in &tx.vout{
-                if out.can_be_unlock_with(&address){
-                    utxos.push(out.clone());
+    pub fn find_UTXO(&self) -> HashMap<String, TXOutputs> {
+        let mut utxos: HashMap<String, TXOutputs> = HashMap::new();
+        let mut spend_txos: HashMap<String, Vec<i32>> = HashMap::new();
+
+
+        for block in self.iter(){
+            for tx in block.get_transaction(){
+               for index in 0..tx.vout.len(){
+                    if let Some(ids) = spend_txos.get(&tx.id){
+                        if ids.contains(&(index as i32)){
+                            continue;
+                        }
+                    }
+
+                    match utxos.get_mut(&tx.id){
+                        Some(v) => {
+                            v.outputs.push(tx.vout[index].clone());
+                        }
+                        None => {
+                            utxos.insert(tx.id.clone(), TXOutputs{outputs: vec![tx.vout[index].clone()],},);
+                        }
+                    }
+                }
+
+                if !tx.is_coinbase() {
+                    for i in &tx.vin {
+                        match spend_txos.get_mut(&i.txid){
+                            Some(v) => {
+                                v.push(i.vout);
+                            }
+                            None => {
+                                spend_txos.insert(i.txid.clone(), vec![i.vout]);
+                            }
+                        }
+                    }
                 }
             }
+
         }
+        
 
         utxos
     }
-
-    ///FindUnspentTransactions returns a list of transactions containing unspent outputs
-    pub fn find_spendable_outputs(&self, address: &[u8], amount: i32,  ) -> (i32, HashMap<String, Vec<i32>>) {
-        let mut unspent_outputs: HashMap<String, Vec<i32>> = HashMap::new();
-        let mut accumulated = 0;
-        let unspend_TXs= self.find_unspent_transactions(address);
-
-        for tx in unspend_TXs{
-            for index in 0..tx.vout.len(){
-                if tx.vout[index].can_be_unlock_with(address) && accumulated < amount{
-                    match unspent_outputs.get_mut(&tx.id) {
-                        Some(v) => v.push(index as i32),
-                        None => {
-                            unspent_outputs.insert(tx.id.clone(), vec![index as i32]);
-                        }
-                    }
-                    accumulated += tx.vout[index].value;
-                    if accumulated >= amount{
-                        return (accumulated, unspent_outputs);
-                    }
-                }
-            }
-        }
-        (accumulated, unspent_outputs)
-    }
-
+ 
     pub fn iter(&self) -> BlockchainIter {
         BlockchainIter {
             current_hash: self.current_hash.clone(),
