@@ -21,7 +21,7 @@ impl UTXOSet {
 
         let utxos = self.blockchain.find_UTXO();
         
-        for (txid, outs) in utxos {
+        for (txid, outs) in utxos.iter() {
             db.insert(txid.as_bytes(), bincode::serialize(&outs)?)?;
         }
 
