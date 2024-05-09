@@ -1,4 +1,4 @@
-use crate::{blockchain::Blockchain, error::Result, utxoset::UTXOSet, wallet:: Wallets};
+use crate::{ error::Result, utxoset::UTXOSet, wallet:: Wallets};
 use std::collections::HashMap;
 use failure::format_err;
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ pub struct Transaction{
 
 impl Transaction{
     ///NewUTXOTransaction creates a new transaction
-    pub fn new_UTXO(from: &str, to: &str, amount: i32, bc: &UTXOSet) -> Result<Transaction>{
+    pub fn new_utxo(from: &str, to: &str, amount: i32, bc: &UTXOSet) -> Result<Transaction>{
         let mut vin = Vec::new();
 
         let wallets = Wallets::new()?;
@@ -99,13 +99,13 @@ impl Transaction{
         self.vin.len() == 1 && self.vin[0].txid.is_empty() && self.vin[0].vout == -1
     }
 
-    pub fn verify(&mut self, prev_TXs: HashMap<String, Transaction>) -> Result<bool>{
+    pub fn verify (&mut self, prev_txs: HashMap<String, Transaction>) -> Result<bool>{
         if self.is_coinbase(){
             return Ok(true);
         }
 
         for vin in &self.vin{
-            if prev_TXs.get(&vin.txid).unwrap().id.is_empty(){
+            if prev_txs.get(&vin.txid).unwrap().id.is_empty(){
                 return Err(format_err!("ERROR: Previous transaction is not correct"));
             }
         }
@@ -113,9 +113,9 @@ impl Transaction{
         let mut tx_copy = self.trim_copy();
 
         for in_id in 0..self.vin.len(){
-            let prev_Tx = prev_TXs.get(&self.vin[in_id].txid).unwrap();
+            let prev_tx = prev_txs.get(&self.vin[in_id].txid).unwrap();
             tx_copy.vin[in_id].signature.clear();
-            tx_copy.vin[in_id].pub_key = prev_Tx.vout[self.vin[in_id].vout as usize].pub_key_hash.clone();
+            tx_copy.vin[in_id].pub_key = prev_tx.vout[self.vin[in_id].vout as usize].pub_key_hash.clone();
             tx_copy.id = tx_copy.hash()?;
             tx_copy.vin[in_id].pub_key = Vec::new();
 
@@ -129,7 +129,7 @@ impl Transaction{
     pub fn sign(
         &mut self,
         private_key: &[u8],
-        prev_TXs: HashMap<String, Transaction>,
+        prev_txs: HashMap<String, Transaction>,
     ) -> Result<()>{
         if self.is_coinbase(){
             return Ok(()); 
@@ -137,16 +137,16 @@ impl Transaction{
     
 
         for vin in &self.vin{
-            if prev_TXs.get(&vin.txid).unwrap().id.is_empty(){
+            if prev_txs.get(&vin.txid).unwrap().id.is_empty(){
                 return Err(format_err!("ERROR: Previous transaction is not correct"));
             }
         }
         let mut tx_copy = self.trim_copy();
 
         for in_id in 0..tx_copy.vin.len()  {
-            let prev_Tx = prev_TXs.get(&tx_copy.vin[in_id].txid).unwrap();
+            let prev_tx = prev_txs.get(&tx_copy.vin[in_id].txid).unwrap();
             tx_copy.vin[in_id].signature.clear();
-            tx_copy.vin[in_id].pub_key = prev_Tx.vout[tx_copy.vin[in_id].vout as usize].pub_key_hash.clone();
+            tx_copy.vin[in_id].pub_key = prev_tx.vout[tx_copy.vin[in_id].vout as usize].pub_key_hash.clone();
             tx_copy.id = tx_copy.hash()?;
             tx_copy.vin[in_id].pub_key = Vec::new();
             let signature = ed25519::signature(tx_copy.id.as_bytes(), private_key);
@@ -193,13 +193,13 @@ impl Transaction{
     
 }
 
-pub fn hash_pub_key(pubKey: &mut Vec<u8>){
+pub fn hash_pub_key(pub_key: &mut Vec<u8>){
     let mut hasher1 = Sha256::new();
-    hasher1.input(pubKey);
-    hasher1.result(pubKey);
+    hasher1.input(pub_key);
+    hasher1.result(pub_key);
     let mut hasher2 = Ripemd160::new();
-    hasher2.input(pubKey);
-    pubKey.resize(20,0);
-    hasher2.result(pubKey); 
+    hasher2.input(pub_key);
+    pub_key.resize(20,0);
+    hasher2.result(pub_key); 
 }
 
