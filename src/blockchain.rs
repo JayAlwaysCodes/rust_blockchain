@@ -1,7 +1,7 @@
 use crate::error::Result;
-use crate::block::{self, Block};
-use crate::transaction:: Transaction;
-use crate::tx::{self, TXOutput, TXOutputs};
+use crate::block::Block;
+use crate::transaction::Transaction;
+use crate::tx::TXOutputs;
 use bincode;
 use failure::format_err;
 use std::string::String;
@@ -37,7 +37,7 @@ impl Blockchain {
     ///CreateBlockchain creates a new blockchain DB
     pub fn create_blockchain(address: String) -> Result<Blockchain>{
         info!("Creating new blockchain...");
-        if let Err(e) = std::fs::remove_dir_all("data/blocks"){
+        if let Err(_e) = std::fs::remove_dir_all("data/blocks"){
             info!("blocks not exist to delete")
         }
 
@@ -66,32 +66,32 @@ impl Blockchain {
 
     ///FindUnspentTransactions returns a list of transactions containing unspent outputs
     fn  find_unspent_transactions(&self, address: &[u8]) -> Vec<Transaction> {
-        let mut  spent_TXOs: HashMap<String, Vec<i32>> = HashMap::new();
-        let mut unspend_TXs: Vec<Transaction> = Vec::new();
+        let mut  spent_txos: HashMap<String, Vec<i32>> = HashMap::new();
+        let mut unspend_txs: Vec<Transaction> = Vec::new();
 
         for block in self.iter(){
             for tx in block.get_transaction(){
                 for index in 0..tx.vout.len(){
-                    if let Some(ids) = spent_TXOs.get(&tx.id) {
+                    if let Some(ids) = spent_txos.get(&tx.id) {
                         if ids.contains(&(index as i32)){
                             continue;
                         }
                     }
 
                     if tx.vout[index].can_be_unlock_with(address){
-                        unspend_TXs.push(tx.to_owned())
+                        unspend_txs.push(tx.to_owned())
                     }
                 }
 
                 if !tx.is_coinbase() {
                     for i in &tx.vin {
                         if i.can_unlock_output_with(address) {
-                            match spent_TXOs.get_mut(&i.txid){
+                            match spent_txos.get_mut(&i.txid){
                                 Some(v) => {
                                     v.push(i.vout);
                                 }
                                 None => {
-                                    spent_TXOs.insert(i.txid.clone(), vec![i.vout]);
+                                    spent_txos.insert(i.txid.clone(), vec![i.vout]);
                                 }
                             }
                         }
@@ -100,11 +100,11 @@ impl Blockchain {
             }
         }
 
-        unspend_TXs
+        unspend_txs
     }
 
     /// FindUTXO finds and returns all unspent transaction outputs
-    pub fn find_UTXO(&self) -> HashMap<String, TXOutputs> {
+    pub fn find_utxo(&self) -> HashMap<String, TXOutputs> {
         let mut utxos: HashMap<String, TXOutputs> = HashMap::new();
         let mut spend_txos: HashMap<String, Vec<i32>> = HashMap::new();
 
@@ -168,26 +168,26 @@ impl Blockchain {
 
     }
 
-    fn get_prev_TXs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>>{
-        let mut prev_TXs = HashMap::new();
+    fn get_prev_txs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>>{
+        let mut prev_txs = HashMap::new();
         for vin in &tx.vin{
-            let prev_TX = self.find_transaction(&vin.txid)?;
-            prev_TXs.insert(prev_TX.id.clone(), prev_TX);
+            let prev_tx = self.find_transaction(&vin.txid)?;
+            prev_txs.insert(prev_tx.id.clone(), prev_tx);
         }
-        Ok(prev_TXs)
+        Ok(prev_txs)
     }
 
     ///SignTransaction signs inputs of a Transactionn
     pub fn sign_transaction(&self, tx: &mut Transaction, private_key: &[u8]) -> Result<()>{
-        let prev_TXs = self.get_prev_TXs(tx)?;
-        tx.sign(private_key, prev_TXs);
+        let prev_txs = self.get_prev_txs(tx)?;
+       let _ = tx.sign(private_key, prev_txs);
         Ok(())
     }
 
     ///VerifyTransaction verifies transaction input signatures
     pub fn  verify_transaction(&self, tx: &mut Transaction) -> Result<bool> {
-        let prev_TXs = self.get_prev_TXs(tx)?;
-        tx.verify(prev_TXs)
+        let prev_txs = self.get_prev_txs(tx)?;
+        tx.verify(prev_txs)
     }
 
 
