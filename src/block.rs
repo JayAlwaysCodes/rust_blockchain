@@ -1,4 +1,4 @@
-use crate::tx;
+
 use crate::{blockchain::Blockchain, transaction::Transaction};
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
